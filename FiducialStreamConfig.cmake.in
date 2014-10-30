@@ -1,0 +1,12 @@
+# - Config file for the FiducialStream package
+# It defines the following variables
+#  FiducialStream_INCLUDE_DIRS - include directories for FiducialStream
+#  FiducialStream_LIBRARIES    - libraries to link against
+
+get_filename_component(FiducialStream_CMAKE_DIR "${CMAKE_CURRENT_LIST_FILE}" PATH)
+
+include("${FiducialStream_CMAKE_DIR}/FiducialStreamTargets.cmake")
+get_filename_component(FiducialStream_INCLUDE_DIRECTORIES "${FiducialStream_CMAKE_DIR}/include/" ABSOLUTE)
+
+set(FiducialStream_LIBRARIES "@FiducialStream_LIBRARIES@")
+list(APPEND FiducialStream_LIBRARIES "${FiducialStream_CMAKE_DIR}/lib/libfidstr.so")
