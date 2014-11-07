@@ -59,7 +59,7 @@ list(APPEND FiducialStream_LIBRARIES "-lboost_thread")
 # Project headers
 include_directories("${PROJECT_SOURCE_DIR}/include")
 
-set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/FiducialStream")
+set(INCLUDE_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/include/fidstr")
 set(LIBRARY_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/lib")
 set(BINARY_INSTALL_DIR "${CMAKE_INSTALL_PREFIX}/bin")
 

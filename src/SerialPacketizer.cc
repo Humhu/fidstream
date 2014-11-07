@@ -3,6 +3,7 @@
 #include <stdexcept>
 
 #include <iostream>
+#include <cmath>
 
 namespace fidstr {
 
@@ -35,16 +36,18 @@ namespace fidstr {
 			unsigned int currentByte = source[ sourceIndex ];
 			
 			// Bit mask for current bytes
-
+			unsigned int mask = (1 << (8 - bitIndex)) - 1;
+			currentByte = currentByte & mask;
+			
 			unsigned int numBitsAdded = 0;
-			int shift = numBitsRemaining - 8;
+			int shift = numBitsRemaining - 8 + bitIndex;
 			if( shift > 0 ) {
 				currentByte = currentByte << shift;
-				numBitsAdded = 8;
+				numBitsAdded = 8 - bitIndex;
 			}
 			else {
 				currentByte = currentByte >> -shift;
-				numBitsAdded = 8 + shift;
+				numBitsAdded = 8 + std::min(shift, -((int)bitIndex) );
 			}
 
 			packet = packet | currentByte;
@@ -76,34 +79,44 @@ namespace fidstr {
 	void SerialDepacketizer::AddPacket( unsigned int packet, unsigned int packetSize ) {
 
 		unsigned int remaining = packetSize;
+
+		std::cout << "Adding packet " << packet << " of size " << packetSize << std::endl;
 		
 		while( remaining > 0 ) {
 
-			char shiftedPacket = packet << bitIndex;
-			char current = buffer[ bufferIndex ] | shiftedPacket;
+			// Number of bits we are adding into the buffer this round
+			unsigned int numToContribute = 8 - bitIndex;
+			if( numToContribute > remaining ) {
+				numToContribute = remaining;
+			}
+	
+			std::cout << "Contributing " << numToContribute << " bits." << std::endl;
+				
+			// The mask to get the added bits from the packet
+			unsigned int mask = (1 << numToContribute) - 1;
 
-			unsigned int increment;
-			if( remaining < sizeof( char ) ) {
-				increment = remaining;
-			}
-			else {
-				increment = sizeof( char ) - bitIndex;
-			}
+			// Getting the bits we're going to add and sliding them to the right
+			unsigned int contrib = (packet >> (remaining - numToContribute)) & mask;
+
+			std::cout << "Contribution: " << contrib << std::endl;
+
+			buffer[ bufferIndex ] = buffer[ bufferIndex ] | contrib;
+			bitIndex += numToContribute;
+			remaining = remaining - numToContribute;
 			
-			packet = packet >> increment;
-			bitIndex += increment;
-			remaining = remaining - increment;
-
-			// NOTE bitIndex should never go over 8
 			if( bitIndex >= 8 ) {
-				bitIndex = 0;
-				buffer.push_back( 0 );
 				bufferIndex++;
+				buffer.push_back( 0 );
+				bitIndex = 0;
 			}
+
 		}
 	}
 
-	std::vector<char> SerialDepacketizer::GetData() const {
+	std::vector<char> SerialDepacketizer::Finalize() {
+		if( bitIndex == 0 ) {
+			buffer.pop_back();
+		}
 		return buffer;
 	}
 

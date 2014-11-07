@@ -10,7 +10,8 @@ namespace fidstr {
 		APRILTAG_25H7,
 		APRILTAG_25H9,
 		APRILTAG_36H9,
-		APRILTAG_36H11
+		APRILTAG_36H11,
+		APRILTAG_CUSTOM
 	};
 	
 	class AprilTagFiducialFamily : public FiducialFamily {
@@ -21,6 +22,8 @@ namespace fidstr {
 		const unsigned int hammingDistance;
 		
 		AprilTagFiducialFamily( AprilTagType _type );
+		AprilTagFiducialFamily( const std::vector<unsigned long long>& ids,
+								unsigned int hDist, unsigned int nBits );
 
 		virtual Fiducial::Ptr GetFiducial( unsigned int id ) const;
 		
@@ -32,7 +35,8 @@ namespace fidstr {
 		virtual void GenerateTags();
 
 	private:
-		
+
+		std::vector<unsigned long long> IDs;
 		const unsigned long long* tagIDs; // The AprilTag header array
 		
 		static std::string GetFamilyName( AprilTagType _type );

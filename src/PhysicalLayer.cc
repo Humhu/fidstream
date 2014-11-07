@@ -15,11 +15,31 @@ namespace fidstr {
 		imageY( _imageY ) {}
 		
 	
-	FiducialReceiver::FiducialReceiver() {}
+	FiducialReceiver::FiducialReceiver( double _framerate ) :
+		framerate( _framerate ) {
 
-	void FiducialReceiver::QueueDetection( const FiducialDetection::Ptr& det ) {
+		lastDetectionTime = boost::posix_time::microsec_clock::universal_time();
+		framePeriod = boost::posix_time::microseconds( std::round( 1E6/framerate ) );
+		framePeriodSlop = boost::posix_time::microseconds( 0 );
+	}
+
+	void FiducialReceiver::SetFramePeriodSlop( TimeDuration _framePeriodSlop ) {
+		framePeriodSlop = _framePeriodSlop;
+	}
+	
+	
+	void FiducialReceiver::ProcessDetection( const FiducialDetection::Ptr& det ) {
 		WriteLock lock( outputMutex );
-		outputBuffer.push_back( det );
+
+		TimeDuration dt = det->timestamp - lastDetectionTime;
+		if( dt > framePeriod - framePeriodSlop ) {
+// 			std::cout << "ID " << det->id << " with dt of " << dt << " accepted." << std::endl;
+			lastDetectionTime = det->timestamp;
+			outputBuffer.push_back( det );
+		}
+		else {
+// 			std::cout << "ID " << det->id << " with dt of " << dt << " rejected!" << std::endl;
+		}
 	}
 	
 	FiducialDetection::Ptr FiducialReceiver::DequeueDetection() {
@@ -71,36 +91,37 @@ namespace fidstr {
 			}
 		}
 
+		std::cout << "Transmitting fiducial ID: " << fid->id << std::endl;
 		cv::imshow( name, fid->bitmap );
 		transmissionStartTime = boost::posix_time::microsec_clock::universal_time();
 	}
 	
-	std::vector<Fiducial::Ptr> EncodeArray( char* data, unsigned int numBytes,
-											 const FiducialFamily& family ) {
-		
-		SerialPacketizer packetizer( data, numBytes );
-		unsigned int numFiducials = std::ceil( ((float) numBytes) / family.numDataBits );
-		
-		std::vector<Fiducial::Ptr> fiducials( numFiducials );
-		
-		for( unsigned int i = 0; i < numFiducials; i++ ) {
-			unsigned int packet = packetizer.GetPacket( family.numDataBits );
-			fiducials[i] = family.GetFiducial( packet );
-		}
-		return fiducials;
-	}
-
-	std::vector<char> DecodeArray( std::vector<unsigned int> detected,
-									const FiducialFamily& family ) {
-
-		SerialDepacketizer depacketizer;
-
-		for( unsigned int i = 0; i < detected.size(); i++ ) {
-			unsigned int id = detected[i];
-			depacketizer.AddPacket( id, family.numDataBits );
-		}
-
-		return depacketizer.GetData();
-	}
+// 	std::vector<Fiducial::Ptr> EncodeArray( char* data, unsigned int numBytes,
+// 											 const FiducialFamily& family ) {
+// 		
+// 		SerialPacketizer packetizer( data, numBytes );
+// 		unsigned int numFiducials = std::ceil( ((float) numBytes) / family.numDataBits );
+// 		
+// 		std::vector<Fiducial::Ptr> fiducials( numFiducials );
+// 		
+// 		for( unsigned int i = 0; i < numFiducials; i++ ) {
+// 			unsigned int packet = packetizer.GetPacket( family.numDataBits );
+// 			fiducials[i] = family.GetFiducial( packet );
+// 		}
+// 		return fiducials;
+// 	}
+// 
+// 	std::vector<char> DecodeArray( std::vector<unsigned int> detected,
+// 									const FiducialFamily& family ) {
+// 
+// 		SerialDepacketizer depacketizer;
+// 
+// 		for( unsigned int i = 0; i < detected.size(); i++ ) {
+// 			unsigned int id = detected[i];
+// 			depacketizer.AddPacket( id, family.numDataBits );
+// 		}
+// 
+// 		return depacketizer.Finalize();
+// 	}
 	
 }

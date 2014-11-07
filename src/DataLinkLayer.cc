@@ -35,7 +35,6 @@ namespace fidstr {
 		std::vector<Frame> frames;
 		BOOST_FOREACH( const Payload& payload, payloads ) {
 			Frame frame = FramePayload( payload );
-			std::cout << "Got a frame of length " << frame.size () << std::endl;
 			frames.push_back( frame );
 		}
 		return frames;
@@ -72,7 +71,7 @@ namespace fidstr {
 		frame.push_back( GetStartFiducial() );
 
 		// Then add payload length fiducial
-		unsigned int payloadLength = std::ceil( data.size()*8/( (float) family.numDataBits ) );
+		unsigned int payloadLength = std::ceil( (data.size()*8)/( (float) family.numDataBits ) );
 		frame.push_back( family.GetFiducial( payloadLength ) );
 
 		// Now add data
@@ -86,9 +85,12 @@ namespace fidstr {
 		// Finally add parity fiducial made by XORing data together
 		// NOTE Have to scrub off extraneous front bits
 		unsigned int mask = (1 << family.numDataBits) - 1;
-		parity = parity && mask;
+		parity = parity & mask;
 		frame.push_back( family.GetFiducial( parity ) );
 
+		// Add frame stop fiducial
+		frame.push_back( GetStopFiducial() );
+		
 		return frame;
 	}
 
@@ -114,17 +116,25 @@ namespace fidstr {
 		while( detection = phy.DequeueDetection() ) {
 
 			Fiducial::Ptr fid = family.GetFiducial( detection->id );
+			std::cout << "Received fiducial ID: " << detection->id << std::endl;
 			
 			if( IsFrameStart( detection->id ) ) {
+				std::cout << "Start fiducial detected!" << std::endl;
 				currentFrame.clear();
 				currentFrame.push_back( fid );
 			}
 			else if( IsFrameEnd( detection->id ) ) {
-
+				
 				currentFrame.push_back( fid );
+
+				std::cout << "End fiducial detected! Frame is " <<
+					currentFrame.size() << " fiducials." << std::endl;
 				
 				if( FrameIsValid( currentFrame ) ) {
+
 					Payload payload = GetFramePayload( currentFrame );
+					std::cout << "Constructed a valid frame with payload length "
+						<< payload.size() << std::endl;
 
 					WriteLock lock( outputMutex );
 					outputBuffer.push_back( payload );
@@ -161,15 +171,19 @@ namespace fidstr {
 
 		// First sanity check start and end fiducials
 		if( !IsFrameStart( frame[0]->id ) ) {
+			std::cout << "Frame does not have valid starter" << std::endl;
 			return false;
 		}
 		if( !IsFrameEnd( frame[frame.size()-1]->id ) ) {
+			std::cout << "Frame does not have valid ender" << std::endl;
 			return false;
 		}
 
 		// Now check number of fiducials in frame
 		unsigned int payloadLength = frame[1]->id;
 		if( payloadLength + 4 != frame.size() ) {
+			std::cout << "Length field of " << payloadLength <<
+				" does not match actual length of " << frame.size() - 4 << std::endl;
 			return false;
 		}
 
@@ -179,8 +193,11 @@ namespace fidstr {
 			parity = parity ^ frame[i]->id;
 		}
 		unsigned int mask = (1 << family.numDataBits) - 1;
-		parity = parity && mask;
-		if( parity != frame[frame.size()-2]->id ) {
+		parity = parity & mask;
+		unsigned int parityField = frame[frame.size()-2]->id;
+		if( parity != parityField ) {
+			std::cout << "Parity field of " << parityField <<
+				" does not match actual parity of " << parity << std::endl;
 			return false;
 		}
 		return true;
@@ -188,8 +205,16 @@ namespace fidstr {
 	}
 
 	Payload FiducialPacketReceiver::GetFramePayload( const Frame& frame ) {
-		Payload payload( frame.begin() + 2, frame.end() - 2 );
-		return payload;
+
+		unsigned int payloadLength = frame[1]->id;
+
+		SerialDepacketizer buffer;
+		for( unsigned int i = 2; i < payloadLength + 2; i++ ) {
+			buffer.AddPacket( frame[i]->id, family.numDataBits );
+		}
+		std::cout << "Finished adding to depacketizer. Now getting data..." << std::endl;
+				
+		return buffer.Finalize();
 	}
 	
 }

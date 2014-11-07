@@ -14,7 +14,8 @@
 
 namespace fidstr {
 
-	AprilTagReceiver::AprilTagReceiver( AprilTagFiducialFamily& _family ) :
+	AprilTagReceiver::AprilTagReceiver( double _framerate, AprilTagFiducialFamily& _family ) :
+		FiducialReceiver( _framerate ),
 		family( _family ) {
 
 		switch( family.type ) {
@@ -38,7 +39,7 @@ namespace fidstr {
 		}
 	}
 
-	void AprilTagReceiver::Receive( const cv::Mat& input) {
+	void AprilTagReceiver::Receive( const cv::Mat& input, Time timestamp) {
 
 		cv::Mat gray;
 		cv::cvtColor(input, gray, CV_BGR2GRAY);
@@ -46,11 +47,9 @@ namespace fidstr {
 
 		BOOST_FOREACH( const AprilTags::TagDetection& detection, detections ) {
 
-			// TODO
-			Time now = boost::posix_time::microsec_clock::universal_time();
 			FiducialDetection::Ptr fdet = std::make_shared<FiducialDetection>(
-				now, detection.id, family, detection.cxy.first, detection.cxy.second );
-			QueueDetection( fdet );
+				timestamp, detection.id, family, detection.cxy.first, detection.cxy.second );
+			ProcessDetection( fdet );
 		}
 	}
 	

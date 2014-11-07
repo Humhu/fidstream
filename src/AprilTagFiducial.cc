@@ -23,6 +23,18 @@ namespace fidstr {
 		GenerateTags();
 	}
 
+	AprilTagFiducialFamily::AprilTagFiducialFamily( const std::vector<unsigned long long>& ids,
+													unsigned int hDist, unsigned int nBits ) :
+		FiducialFamily( "custom", ids.size() ),
+		type( APRILTAG_CUSTOM ),
+		hammingDistance( hDist ),
+		IDs( ids ),
+		tagIDs( IDs.data() ),
+		numTagBits( nBits ) {
+
+		GenerateTags();
+	}
+
 	void AprilTagFiducialFamily::GenerateTags() {
 
 		// Tags are all square

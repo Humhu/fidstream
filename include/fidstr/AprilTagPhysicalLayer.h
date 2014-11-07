@@ -11,9 +11,9 @@ namespace fidstr {
 	class AprilTagReceiver : public FiducialReceiver {
 	public:
 		
-		AprilTagReceiver( AprilTagFiducialFamily& _family );
+		AprilTagReceiver( double _framerate, AprilTagFiducialFamily& _family );
 
-		virtual void Receive( const cv::Mat& input );
+		virtual void Receive( const cv::Mat& input, Time timestamp );
 
 	private:
 

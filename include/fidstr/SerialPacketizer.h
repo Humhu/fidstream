@@ -33,9 +33,8 @@ namespace fidstr {
 		SerialDepacketizer();
 
 		void AddPacket( unsigned int packet, unsigned int packetSize );
-
-		std::vector<char> GetData() const;
-
+		std::vector<char> Finalize();
+		
 		void Clear();
 
 	private:

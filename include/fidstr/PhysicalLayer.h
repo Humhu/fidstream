@@ -32,10 +32,14 @@ namespace fidstr {
 	class FiducialReceiver {
 	public:
 
-		FiducialReceiver();
+		const double framerate;
+		
+		FiducialReceiver( double _framerate );
 
+		void SetFramePeriodSlop( TimeDuration _framePeriodSlop );
+		
 		/*! \brief Receive and process a captured image. */
-		virtual void Receive( const cv::Mat& input ) = 0;
+		virtual void Receive( const cv::Mat& input, Time timestamp ) = 0;
 
 		/*! \brief Pops and returns the earliest detected fiducial off the
 		 * output queue, or null if there are no detections. */
@@ -43,10 +47,16 @@ namespace fidstr {
 
 	protected:
 
-		void QueueDetection( const FiducialDetection::Ptr& det );
+		/*! \brief Adds the detection to the queue if it has occurred more than
+		 * the frame period after the previous detection. */
+		void ProcessDetection( const FiducialDetection::Ptr& det );
 		
 	private:
 
+		Time lastDetectionTime;
+		TimeDuration framePeriod;
+		TimeDuration framePeriodSlop;
+		
 		mutable Mutex outputMutex;
 		std::deque<FiducialDetection::Ptr> outputBuffer;
 
@@ -77,13 +87,13 @@ namespace fidstr {
 		
 	};
 
-	/*! \brief Encodes a data byte array as an array of fiducials using the specified family. */
-	std::vector<Fiducial::Ptr> EncodeArray( char* data, unsigned int numBytes,
-											const FiducialFamily& family );
-
-	/*! \brief Decodes an array of fiducials to a data byte array using the specified family. */
-	std::vector<char> DecodeArray( const std::vector<unsigned int> detectedIDs,
-								const FiducialFamily& family );
+// 	/*! \brief Encodes a data byte array as an array of fiducials using the specified family. */
+// 	std::vector<Fiducial::Ptr> EncodeArray( char* data, unsigned int numBytes,
+// 											const FiducialFamily& family );
+// 
+// 	/*! \brief Decodes an array of fiducials to a data byte array using the specified family. */
+// 	std::vector<char> DecodeArray( const std::vector<unsigned int> detectedIDs,
+// 								const FiducialFamily& family );
 
 }
 

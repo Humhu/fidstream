@@ -6,7 +6,8 @@ set(SRCS
 	DataLinkLayer.cc
 	Fiducial.cc
 	PhysicalLayer.cc
-	SerialPacketizer.cc)
+	SerialPacketizer.cc
+	SynchronizationPrimitives.cc )
 
 add_library(fidstr SHARED ${SRCS})
 
