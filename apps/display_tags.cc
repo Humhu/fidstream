@@ -54,7 +54,7 @@ void CameraLoop() {
 
 int main( int argc, char* argv[] ) {
 
-	unsigned int messageLength = 16;
+	unsigned int messageLength = 128;
 	if( argc >= 2 ) {
 		messageLength = stoi( argv[1] );
 	}
@@ -72,7 +72,7 @@ int main( int argc, char* argv[] ) {
 
 	usleep( 0.25*1E6 );
 	
-	FiducialPacketTransmitter ptransmitter( family, transmitter, 16 );
+	FiducialPacketTransmitter ptransmitter( family, transmitter, messageLength );
 
 	// Create a dummy packet
 	Packet packet;
