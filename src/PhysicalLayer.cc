@@ -57,7 +57,11 @@ namespace fidstr {
 	FiducialTransmitter::FiducialTransmitter( const std::string& _name, double _framerate ) :
 		name( _name ), framerate( _framerate ) {
 
+#ifdef OPENCV3
+		cv::namedWindow( name, cv::WINDOW_NORMAL );
+#else
 		cv::namedWindow( name, CV_WINDOW_NORMAL );
+#endif
 		transmissionStartTime = boost::posix_time::microsec_clock::universal_time();
 		transmissionPeriod = boost::posix_time::microseconds( std::round( 1E6/framerate ) );
 	}
@@ -68,12 +72,21 @@ namespace fidstr {
 
 	void FiducialTransmitter::SetFullscreen( bool fullscreen ) {
 
+#ifdef OPENCV3
 		if( fullscreen ) {
-			cv::setWindowProperty( name, CV_WND_PROP_FULLSCREEN, CV_WINDOW_FULLSCREEN );
+			cv::setWindowProperty( name, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN );
 		}
 		else {
-			cv::setWindowProperty( name, CV_WND_PROP_FULLSCREEN, CV_WINDOW_NORMAL );
+			cv::setWindowProperty( name, cv::WND_PROP_FULLSCREEN, cv::WINDOW_NORMAL );
 		}
+#else
+		if( fullscreen ) {
+			cv::setWindowProperty( name, cv::WND_PROP_FULLSCREEN, cv::WINDOW_FULLSCREEN );
+		}
+		else {
+			cv::setWindowProperty( name, cv::WND_PROP_FULLSCREEN, cv::WINDOW_NORMAL );
+		}
+#endif
 	}
 
 	void FiducialTransmitter::Transmit( const Fiducial::Ptr& fid ) {

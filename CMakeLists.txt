@@ -41,20 +41,20 @@ list(APPEND FiducialStream_LIBRARIES ${AprilTags_LIBRARIES})
 
 # OpenCV imaging
 # OpenCV for camera interface
-find_package( OpenCV 2 REQUIRED
+find_package( OpenCV REQUIRED
     HINTS ~/Software/opencv/install )
 message(STATUS "OpenCV found at: ${OpenCV_INCLUDE_DIRS}")
 include_directories(${OpenCV_INCLUDE_DIRS})
 list(APPEND FiducialStream_LIBRARIES ${OpenCV_LIBS})
+if( OpenCV_VERSION VERSION_EQUAL "3")
+	add_definitions("-DOPENCV3=1")
+endif()
 
-# Threading and Boost
-find_package (Threads REQUIRED)
-list(APPEND FiducialStream_LIBRARIES ${CMAKE_THREAD_LIBS_INIT})
-
-find_package(Boost REQUIRED)
+# Boost
+find_package(Boost REQUIRED
+	COMPONENTS thread system )
 include_directories(${Boost_INCLUDE_DIRS})
 list(APPEND FiducialStream_LIBRARIES ${Boost_LIBRARIES})
-list(APPEND FiducialStream_LIBRARIES "-lboost_thread")
 
 # Project headers
 include_directories("${PROJECT_SOURCE_DIR}/include")

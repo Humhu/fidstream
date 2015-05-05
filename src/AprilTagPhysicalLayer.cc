@@ -42,7 +42,12 @@ namespace fidstr {
 	void AprilTagReceiver::Receive( const cv::Mat& input, Time timestamp) {
 
 		cv::Mat gray;
-		cv::cvtColor(input, gray, CV_BGR2GRAY);
+		
+#ifdef OPENCV3
+		cv::cvtColor( input, gray, cv::COLOR_BGR2GRAY );
+#else
+		cv::cvtColor(input, gray, CV_BGR2GRAY);		
+#endif
 		std::vector<AprilTags::TagDetection> detections = detector->extractTags( gray );
 
 		BOOST_FOREACH( const AprilTags::TagDetection& detection, detections ) {
